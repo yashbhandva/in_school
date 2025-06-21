@@ -1,0 +1,62 @@
+package com.shop.in.Rest;
+
+import com.shop.in.model.Contact;
+import com.shop.in.model.Response;
+import com.shop.in.servicImpl.ContactServiceImpl;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@Slf4j
+@RestController
+@RequestMapping("/api")
+public class ContactRestController {
+
+    @Autowired
+    private ContactServiceImpl service;
+
+    //http://localhost:8080/api/getContactPages?pageNum=1&pageField=name&pageDir=desc
+    @GetMapping("/getContactPages")
+    public Page<Contact> getContactPages(@RequestParam int pageNum,
+                                         @RequestParam String pageDir,
+                                         @RequestParam String pageField){
+        return service.findPaginated(pageNum ,pageField ,pageDir);
+    }
+
+    //http://localhost:8080/api/saveMsg
+    @PostMapping("/saveMsg")
+    public ResponseEntity<Response> saveMessage(@RequestHeader("invocationFrom") String invocationFrom,
+                                                @Valid @RequestBody Contact contact){
+
+
+        log.info(String.format("invocation from =%s", invocationFrom));
+        service.saveInfo(contact);
+        Response response = new Response();
+        response.setStatusCode("200");
+        response.setStatusMessage("message saved successfully complete.");
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .header("isMessageSaved" ,"true")
+                .body(response);
+    }
+
+
+    //http://localhost:8080/api/deleteMsg/101
+    @DeleteMapping("/deleteMsg/{id}")
+    public ResponseEntity<Response> deleteMessage(@PathVariable int id){
+        service.deleteContact(id);
+
+        Response response = new Response();
+        response.setStatusCode("200");
+        response.setStatusMessage("message was deleted successfully complete");
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+}

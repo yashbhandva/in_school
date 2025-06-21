@@ -1,0 +1,74 @@
+package com.shop.in.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+public class Person {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+
+    @NotBlank(message = "Name is required")
+    @Size(min = 2, max = 50, message = "Name must be 2 to 50 characters")
+    private String name;
+
+    @NotBlank(message = "Mobile number is required")
+    @Pattern(regexp = "^[6-9]\\d{9}$", message = "Mobile number must be 10 digits starting with 6-9")
+    private String mobileNumber;
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
+    private String email;
+
+    @JsonIgnore
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be 6 or up")
+    private String pwd;
+
+    @JsonIgnore
+    @Transient
+    private String confirmPwd;
+
+    @Min(value = 10, message = "Age must be at least 18")
+    @Max(value = 100, message = "Age must be less than or equal to 100")
+    private int age;
+
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", referencedColumnName = "roleId", nullable = false)
+    private Roles roles;
+
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL ,targetEntity = Address.class)
+    @JoinColumn(name = "address_id", referencedColumnName = "id" ,nullable = true)
+    private Address address;
+
+    @ManyToOne(fetch = FetchType.LAZY ,cascade = CascadeType.ALL)
+    @JoinColumn(name = "class_id" ,referencedColumnName = "class_Id")
+    private EazyClass eazyClass;
+
+    @ManyToMany(cascade = CascadeType.ALL ,fetch = FetchType.EAGER)
+    @JoinTable(name = "person_course" ,
+            joinColumns = {
+                @JoinColumn(name = "person_id" ,referencedColumnName = "id")
+            },
+            inverseJoinColumns = {
+                @JoinColumn(name = "course_id" ,referencedColumnName = "courseId")
+            }
+    )
+    private Set<Course> courses = new HashSet<>();
+}

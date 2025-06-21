@@ -1,0 +1,34 @@
+package com.shop.in.model;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.Collections;
+
+public class UserPrincipal implements UserDetails {
+
+    private Person person;
+    public UserPrincipal(Person person) {
+        this.person = person;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singleton(new SimpleGrantedAuthority("ROLE_"+person.getRoles().getRoleName().toUpperCase()));
+    }
+
+    @Override
+    public String getPassword() {
+        return person.getPwd();
+    }
+
+    @Override
+    public String getUsername() {
+        return person.getEmail();
+    }
+
+
+}

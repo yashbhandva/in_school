@@ -1,0 +1,98 @@
+package com.shop.in.BeanConfig;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class ApplicationSecurityConfig {
+
+    @Autowired
+    private UserDetailsService userDetails;
+
+    @Bean
+    SecurityFilterChain securityFilterChain (HttpSecurity http) throws Exception {
+        return http
+                .csrf(csrf->csrf
+//                        .ignoringRequestMatchers("/saveMsg")
+//                        .ignoringRequestMatchers("/updateProfile"))
+                        .disable())
+                .authorizeHttpRequests(auth-> auth
+                        .requestMatchers("/home").permitAll()
+                        .requestMatchers("/displayProfile").authenticated()
+                        .requestMatchers("/updateProfile").authenticated()
+                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/holidays").permitAll()
+                        .requestMatchers("/data-api/**").hasAnyRole("ADMIN")
+                        .requestMatchers("/student/**").hasAnyRole("USER")
+                        .requestMatchers("/assets/**").permitAll() //permit all css ,js, images and all other static files
+                        .requestMatchers("/about").permitAll()
+                        .requestMatchers("/courses").permitAll()
+                        .requestMatchers("/login").permitAll()
+                        .requestMatchers("/public/register").permitAll()
+                        .requestMatchers("/public/createUser").permitAll()
+                        .requestMatchers("/logout").permitAll()
+                        .requestMatchers("/dashboard").authenticated()
+                        .requestMatchers("/displayMessages/**").hasAnyRole("ADMIN")
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN")
+                        .requestMatchers("/closeMsg").hasAnyRole("ADMIN")
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
+                        .requestMatchers("/contact" ,"/saveMsg").authenticated()
+                        .requestMatchers("/deleteMsg/**").permitAll()
+        )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/dashboard",true)
+                        .failureUrl("/login?error=true")
+                        .permitAll()
+                )
+//                .logout(logout-> logout
+//                        .logoutSuccessUrl("/login?logout=true")
+//                        .invalidateHttpSession(true)
+//                        .permitAll())
+
+                .httpBasic(Customizer.withDefaults())
+                .build();
+    }
+
+    @Bean
+    public PasswordEncoder encoder(){
+       return new BCryptPasswordEncoder();
+    }
+
+//    @Bean
+//    public InMemoryUserDetailsManager userDetailsManager(){
+//        UserDetails admin = User
+//                .withUsername("yash")
+//                .password(encoder().encode("123"))
+//                .roles("ADMIN")
+//                .build();
+//
+//        UserDetails user = User
+//                .withUsername("vijay")
+//                .password(encoder().encode("123"))
+//                .roles("USER")
+//                .build();
+//
+//        return new InMemoryUserDetailsManager(admin,user);
+//    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider(){
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(encoder());
+        provider.setUserDetailsService(userDetails);
+        return provider;
+    }
+
+
+}
