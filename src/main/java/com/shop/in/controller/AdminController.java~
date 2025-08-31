@@ -1,0 +1,180 @@
+package com.shop.in.controller;
+
+import com.shop.in.model.Course;
+import com.shop.in.model.EazyClass;
+import com.shop.in.model.Person;
+import com.shop.in.repository.EazyClassRepo;
+import com.shop.in.repository.PersonRepo;
+import com.shop.in.servicImpl.CourseServiceImpl;
+import com.shop.in.servicImpl.EazyClassServiceImpl;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+@RequestMapping("/admin")
+@Controller
+public class AdminController {
+
+    @Autowired
+    private EazyClassRepo repo;
+
+    @Autowired
+    private EazyClassServiceImpl service;
+
+    @Autowired
+    private PersonRepo personRepo;
+
+    @Autowired
+    private CourseServiceImpl courseService;
+
+    @GetMapping("/displayClasses")
+    public String displayClasses(Model model){
+
+        List<EazyClass> eazyClass = service.findAllClasses();
+        model.addAttribute("eazyClasses",eazyClass);
+        model.addAttribute("eazyClass" ,new EazyClass());
+        return "classes.html";
+    }
+
+    @PostMapping("/addNewClass")
+    public String addNewClass(@ModelAttribute("eazyClass") EazyClass eazyClass){
+        service.saveClass(eazyClass);
+        return "redirect:/admin/displayClasses";
+    }
+
+    @RequestMapping("/deleteClass")
+    public String deleteClassById(@RequestParam int id){
+        service.deleteClass(id);
+        return "redirect:/admin/displayClasses";
+    }
+
+    @GetMapping("/displayStudents")
+    public String displayStudents(Model model , @RequestParam int classId , HttpSession session,
+                                  @RequestParam(required = false) String error){
+
+        String errorMessage = null;
+        Optional<EazyClass> eazyClassOptional = repo.findById(classId);
+
+        if (eazyClassOptional.isPresent()) {
+            EazyClass eazyClass = eazyClassOptional.get();
+            model.addAttribute("eazyClass", eazyClass);
+            model.addAttribute("person", new Person());
+            session.setAttribute("eazyClass", eazyClass); // ✅ FIXED
+        } else {
+            model.addAttribute("errorMessage", "Class not found.");
+            return "redirect:/admin/displayClasses";
+        }
+
+        if (error != null) {
+            errorMessage = "Invalid Email";
+            model.addAttribute("errorMessage", errorMessage);
+        }
+
+        return "students.html";
+    }
+
+    @PostMapping("/addStudent")
+    public String addNewStudent(@ModelAttribute("person") Person person , HttpSession session){
+        EazyClass eazyClassFromSession = (EazyClass) session.getAttribute("eazyClass");
+
+        EazyClass eazyClass = repo.findById(eazyClassFromSession.getClassId()).orElse(null);
+        if (eazyClass == null) {
+            return "redirect:/admin/displayClasses";
+        }
+
+        Person entity = personRepo.findUserByEmail(person.getEmail());
+
+        if (entity == null){
+            return "redirect:/admin/displayStudents?classId=" + eazyClass.getClassId() + "&error=true";
+        }
+
+        entity.setEazyClass(eazyClass); // Now setting the managed EazyClass
+        personRepo.save(entity);
+
+        return "redirect:/admin/displayStudents?classId=" + eazyClass.getClassId();
+    }
+
+    @GetMapping("/displayCourses")
+    public String displayCourses(Model model){
+        List<Course> courses = courseService.findAllCourse();
+        model.addAttribute("courses" ,courses);
+        model.addAttribute("course" ,new Course());
+        return "courses_secure";
+    }
+
+    @PostMapping("/addNewCourse")
+    public String addNewCourse(@ModelAttribute("course") Course course){
+        courseService.saveCourse(course);
+        return "redirect:/admin/displayCourses";
+    }
+
+    @GetMapping("/viewStudents")
+    public String viewStudents(@RequestParam int id
+            ,@RequestParam(name = "error" ,required = false) String error
+            ,Model model ,HttpSession session){
+
+        String errorMessage = null;
+
+        if (error != null){
+            errorMessage = "Invalid Email";
+            model.addAttribute("errorMessage" ,errorMessage);
+        }
+        Optional<Course> course = courseService.findById(id);
+        model.addAttribute("courses" ,course.get());
+        model.addAttribute("person" ,new Person());
+        session.setAttribute("course" ,course.get());
+        return "course_students";
+    }
+
+    @PostMapping("/addStudentToCourse")
+    public String addStudentToCourse(@ModelAttribute("person") Person person ,HttpSession session){
+        Course course =(Course) session.getAttribute("course");
+
+        Person entity = personRepo.findUserByEmail(person.getEmail());
+        if (entity == null){
+            return "redirect:/admin/viewStudents?id="+course.getCourseId()+"&error=true";
+        }
+
+        Set<Course> courses = entity.getCourses();
+        if (courses == null) {
+            courses = new HashSet<>();
+        }
+        courses.add(course);
+        entity.setCourses(courses);
+        personRepo.save(entity);
+
+        return "redirect:/admin/viewStudents?id="+course.getCourseId();
+    }
+    @GetMapping("/deleteStudent")
+    public String deleteStudent(@RequestParam int id, HttpSession session) {
+        EazyClass eazyClass = (EazyClass) session.getAttribute("eazyClass");
+        if (eazyClass == null) {
+            return "redirect:/admin/classes?error=missingSessionClass";
+        }
+
+        Optional<Person> optionalPerson = personRepo.findById(id);
+        if (optionalPerson.isEmpty()) {
+            return "redirect:/admin/displayStudents?classId=" + eazyClass.getClassId() + "&error=notFound";
+        }
+
+        Person person = optionalPerson.get();
+        person.setEazyClass(null);
+        eazyClass.getPersons().remove(person);
+
+        EazyClass updated = repo.save(eazyClass);
+        session.setAttribute("eazyClass", updated);
+
+        return "redirect:/admin/displayStudents?classId=" + eazyClass.getClassId();
+    }
+
+}
+

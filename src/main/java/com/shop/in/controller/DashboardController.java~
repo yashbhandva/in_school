@@ -1,0 +1,58 @@
+package com.shop.in.controller;
+
+import com.shop.in.model.Person;
+import com.shop.in.model.UserPrincipal;
+import com.shop.in.repository.PersonRepo;
+import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Slf4j
+@Controller
+public class DashboardController {
+
+    @Autowired
+    private PersonRepo repo;
+
+    @Autowired
+    private Environment environment;
+
+//    @Value("@{in.defaultPageSize}")
+//    String defaultPagesize;
+//
+//    @Value("${in.successMessage}")
+//    String message;
+
+    @GetMapping("/dashboard")
+    public String displayDashboard(Model model, Authentication authentication , HttpSession session){
+
+        Person person = repo.findUserByEmail(authentication.getName());
+        if (person == null) {
+            return "redirect:/login";
+        }
+        session.setAttribute("loggedInPerson" ,person);
+        model.addAttribute("username", person.getName());
+        model.addAttribute("roles", authentication.getAuthorities().toString());
+
+        if (person.getEazyClass() != null) {
+            model.addAttribute("enrolledClass", repo.getClass().getName().toString());
+        }
+        logMessages();
+
+        return "dashboard";
+    }
+
+    private void logMessages(){
+//        log.error("default page size with @Value is : "+defaultPagesize);
+//        log.error("success message with @Value is : "+message);
+
+        log.info(environment.getProperty("in.pageSize"));
+        log.info(environment.getProperty("in.contact.successMessage"));
+    }
+}

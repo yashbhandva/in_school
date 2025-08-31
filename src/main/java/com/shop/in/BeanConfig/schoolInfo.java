@@ -1,0 +1,23 @@
+package com.shop.in.BeanConfig;
+
+import org.springframework.boot.actuate.info.Info;
+import org.springframework.boot.actuate.info.InfoContributor;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Component
+public class schoolInfo implements InfoContributor {
+    @Override
+    public void contribute(Info.Builder builder) {
+        Map<String ,String> map = new HashMap<>();
+        map.put("App name" , "Eazy School");
+        map.put("App version" , "1.0.0");
+        map.put("App description" , "Eazy School App Web Application for School Management");
+        map.put("App author" , "yash bhandva");
+        map.put("Email" ,"yashbhandva01@gmail.com");
+        map.put("contact" ,"9512570683");
+        builder.withDetail("App details" , map);
+    }
+}
