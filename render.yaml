@@ -1,10 +1,11 @@
 services:
   - type: web
     name: in-spring-app
-    env: docker
-    dockerfile: ./Dockerfile
-    dockerCommand: ""
-    dockerContext: .
+    env: java
+    buildCommand: |
+      chmod +x ./mvnw
+      ./mvnw clean package -DskipTests
+    startCommand: java -Dserver.port=$PORT -Dspring.profiles.active=prod -jar target/in-0.0.1-SNAPSHOT.jar
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
