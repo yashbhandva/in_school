@@ -2,7 +2,6 @@ services:
   - type: web
     name: in-spring-app
     env: java
-    rootDir: in
     buildCommand: |
       chmod +x ./mvnw
       ./mvnw clean package -DskipTests
