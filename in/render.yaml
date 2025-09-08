@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: in-spring-app
+    env: java
+    buildCommand: chmod +x ./mvnw && ./mvnw clean package -DskipTests
+    startCommand: java -Dserver.port=$PORT -jar target/in-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 10000
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: in-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: in-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: in-db
+          property: password
+    healthCheckPath: /
+    plan: free
+
+databases:
+  - name: in-db
+    databaseName: in_prod
+    user: in_user
+    plan: free
