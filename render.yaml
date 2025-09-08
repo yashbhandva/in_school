@@ -3,6 +3,8 @@ services:
     name: in-spring-app
     env: docker
     dockerfile: ./Dockerfile
+    dockerCommand: ""
+    dockerContext: .
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
