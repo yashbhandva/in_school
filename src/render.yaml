@@ -2,9 +2,9 @@ services:
   - type: web
     name: in-spring-app
     env: docker
-    dockerfile: ./src/Dockerfile
+    dockerfile: ./Dockerfile
     dockerCommand: ""
-    dockerContext: ./src
+    dockerContext: .
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
@@ -17,16 +17,16 @@ services:
       - key: SPRING_DATASOURCE_USERNAME
         fromDatabase:
           name: in-db
-          property: username
+          property: user
       - key: SPRING_DATASOURCE_PASSWORD
         fromDatabase:
           name: in-db
           property: password
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_EXPIRATION
-        value: "86400000"
-      - key: SPRING_MAIL_USERNAME
-        value: your-email@example.com
-      - key: SPRING_MAIL_PASSWORD
-        value: your-email-password
+    healthCheckPath: /
+    plan: free
+
+databases:
+  - name: in-db
+    databaseName: in_prod
+    user: in_user
+    plan: free
