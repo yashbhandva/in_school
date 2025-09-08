@@ -5,11 +5,11 @@ FROM eclipse-temurin:21-jdk-jammy
 WORKDIR /app
 
 # Copy the Maven wrapper and pom.xml
-COPY in/mvnw .
-COPY in/pom.xml .
+COPY mvnw .
+COPY pom.xml .
 
 # Copy the source code
-COPY in/src ./src
+COPY src ./src
 
 # Build the application
 RUN chmod +x mvnw
